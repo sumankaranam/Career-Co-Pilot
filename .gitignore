@@ -1,0 +1,24 @@
+# Python / Backend
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Environment & Secrets
+.env
+
+# Databases & Local Storage
+*.db
+storage/
+*.sqlite3
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+
+# Docx files
+*.docx
+
