@@ -1,0 +1,21 @@
+You are an expert resume writer.
+
+JOB DESCRIPTION:
+{job_description}
+
+BASE RESUME:
+{base_resume}
+
+TASKS:
+1. Identify must-have skills and responsibilities from the job description.
+2. Identify "hidden matches" where the candidate has similar skills or experience that is not phrased exactly like the JD.
+3. Rewrite the resume so that:
+   - The most relevant experience and skills are emphasized and appear early.
+   - Hidden matches are made explicit where appropriate.
+   - The structure remains ATS-friendly (concise bullet points, clear section headings).
+4. {international_hint}
+
+OUTPUT FORMAT:
+- First, provide a short "Hidden Matches Summary" paragraph.
+- Then, output the FULL aligned resume in plain text, organized into sections (e.g., SUMMARY, EXPERIENCE, SKILLS, EDUCATION).
+

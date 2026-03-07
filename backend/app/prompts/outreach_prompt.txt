@@ -1,0 +1,32 @@
+You are an expert in professional communication.
+
+JOB DESCRIPTION:
+{job_description}
+
+ALIGNED RESUME:
+{aligned_resume}
+
+JOB METADATA:
+- Company: {company_name}
+- Location: {location}
+- Poster name: {poster_name}
+- Contact email: {contact_email}
+
+TASKS:
+1. Write a tailored COVER LETTER (3–5 short paragraphs) that references the most relevant experience and skills.
+2. Write a concise, professional COLD EMAIL for the hiring contact, with a subject line and email body.
+3. Write a short, friendly LINKEDIN DM (InMail style) addressed to the poster by name if available.
+
+OUTPUT FORMAT (plain text):
+=== COVER LETTER ===
+<cover letter>
+
+=== EMAIL SUBJECT ===
+<subject>
+
+=== EMAIL BODY ===
+<body>
+
+=== LINKEDIN DM ===
+<dm>
+

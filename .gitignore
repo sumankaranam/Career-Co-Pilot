@@ -8,6 +8,7 @@ venv/
 
 # Environment & Secrets
 .env
+scripts/set_llm_env.local.ps1
 
 # Databases & Local Storage
 *.db

@@ -1,8 +1,17 @@
+from pathlib import Path
 from textwrap import shorten
 from typing import Dict, Tuple
 
 from ..models import JobPosting, Resume
 from .llm_client import get_llm_client
+
+
+PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
+ALIGNMENT_PROMPT_PATH = PROMPTS_DIR / "alignment_prompt.txt"
+
+
+def _load_alignment_template() -> str:
+    return ALIGNMENT_PROMPT_PATH.read_text(encoding="utf-8")
 
 
 def build_alignment_prompt(resume: Resume, job: JobPosting) -> str:
@@ -13,28 +22,12 @@ def build_alignment_prompt(resume: Resume, job: JobPosting) -> str:
         else "The job is in India or local; no special relocation messaging is required."
     )
 
-    return f"""
-You are an expert resume writer.
-
-JOB DESCRIPTION:
-{job.jd_text}
-
-BASE RESUME:
-{resume.text_content}
-
-TASKS:
-1. Identify must-have skills and responsibilities from the job description.
-2. Identify "hidden matches" where the candidate has similar skills or experience that is not phrased exactly like the JD.
-3. Rewrite the resume so that:
-   - The most relevant experience and skills are emphasized and appear early.
-   - Hidden matches are made explicit where appropriate.
-   - The structure remains ATS-friendly (concise bullet points, clear section headings).
-4. {international_hint}
-
-OUTPUT FORMAT:
-- First, provide a short "Hidden Matches Summary" paragraph.
-- Then, output the FULL aligned resume in plain text, organized into sections (e.g., SUMMARY, EXPERIENCE, SKILLS, EDUCATION).
-""".strip()
+    template = _load_alignment_template()
+    return template.format(
+        job_description=job.jd_text,
+        base_resume=resume.text_content,
+        international_hint=international_hint,
+    ).strip()
 
 
 def parse_alignment_output(output: str) -> Tuple[str, Dict[str, str]]:
