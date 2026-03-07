@@ -6,4 +6,5 @@ python-docx
 requests
 beautifulsoup4
 google-generativeai
+python-multipart
 

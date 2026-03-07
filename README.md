@@ -393,3 +393,67 @@ This keeps components UI-focused and avoids repeating `fetch` logic.
 - **Database Swap Readiness**
   - Because the backend uses repository interfaces, swapping SQLite for PostgreSQL or DynamoDB is primarily a configuration and driver change, not an application rewrite.
 
+---
+
+### 9. Running the App Locally
+
+#### 9.1 Prerequisites
+
+- **Python 3.11+** installed and on your `PATH`.
+- (Optional but recommended) A virtual environment for Python dependencies.
+
+#### 9.2 Install backend dependencies
+
+From the repo root (`Career-Co-Pilot/`):
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+If you want real Gemini outputs (instead of stubbed text), set `GOOGLE_API_KEY`:
+
+- **PowerShell (Windows)**:
+
+```bash
+$env:GOOGLE_API_KEY="your_gemini_api_key_here"
+```
+
+- **cmd.exe (Windows)**:
+
+```bash
+set GOOGLE_API_KEY=your_gemini_api_key_here
+```
+
+#### 9.3 Start the FastAPI backend
+
+From the `backend/` folder:
+
+```bash
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+The API should now be available at `http://127.0.0.1:8000/` (and interactive docs at `http://127.0.0.1:8000/docs`).
+
+#### 9.4 Start the frontend
+
+The first version uses a simple static HTML + React setup and can be served with Python’s built-in HTTP server.
+
+From the `frontend/` folder:
+
+```bash
+cd frontend
+python -m http.server 5173
+```
+
+Then open the UI in your browser:
+
+- `http://localhost:5173`
+
+#### 9.5 End-to-end flow
+
+1. Open `http://localhost:5173`.
+2. **Upload** your base resume as a `.docx` file.
+3. **Paste** a LinkedIn job URL and click **Analyze**.
+4. Click **Run Alignment** to generate the aligned resume, then click **Download Aligned Resume (.docx)**.
+5. Click **Generate Outreach** to get the tailored cover letter, email template, and LinkedIn DM text.
