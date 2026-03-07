@@ -127,6 +127,7 @@ function JobUrlForm({ onAnalyzed }) {
 function AlignmentReview({ resume, job, alignment, onAligned }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [template, setTemplate] = useState("classic");
 
   async function runAlignment() {
     if (!resume || !job) return;
@@ -136,7 +137,11 @@ function AlignmentReview({ resume, job, alignment, onAligned }) {
       const res = await fetch(`${API_BASE}/api/alignment/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume_id: resume.id, job_id: job.id }),
+        body: JSON.stringify({
+          resume_id: resume.id,
+          job_id: job.id,
+          template,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -165,8 +170,21 @@ function AlignmentReview({ resume, job, alignment, onAligned }) {
         <div>
           <h2 className="text-lg font-semibold">Alignment Workflow</h2>
           <p className="text-sm text-slate-400">
-            Align your resume to this job and preview the changes.
+            Align your resume to this job, choose a template, and preview the
+            changes.
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-400">Template</label>
+          <select
+            value={template}
+            onChange={(e) => setTemplate(e.target.value)}
+            className="rounded-md bg-slate-950 border border-slate-700 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="classic">Classic</option>
+            <option value="modern">Modern</option>
+            <option value="compact">Compact</option>
+          </select>
         </div>
         <button
           onClick={runAlignment}

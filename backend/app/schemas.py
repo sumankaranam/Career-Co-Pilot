@@ -40,6 +40,7 @@ class JobOut(BaseModel):
 class AlignmentRunRequest(BaseModel):
     resume_id: int
     job_id: int
+    template: Optional[str] = "classic"
 
 
 class AlignmentSummary(BaseModel):

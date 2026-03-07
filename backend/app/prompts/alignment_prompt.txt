@@ -6,6 +6,12 @@ JOB DESCRIPTION:
 BASE RESUME:
 {base_resume}
 
+RULES (VERY IMPORTANT):
+- You must NOT invent new companies, roles, dates, locations, or degrees.
+- You may only rephrase, reorganize, and selectively emphasize facts that are present in the BASE RESUME.
+- You may bring the most relevant experience earlier in the document, merge or split bullets, and highlight achievements that match the JOB DESCRIPTION.
+- You may generalize or tighten wording, but never fabricate new responsibilities or skills that the candidate does not have.
+
 TASKS:
 1. Identify must-have skills and responsibilities from the job description.
 2. Identify "hidden matches" where the candidate has similar skills or experience that is not phrased exactly like the JD.
@@ -18,4 +24,5 @@ TASKS:
 OUTPUT FORMAT:
 - First, provide a short "Hidden Matches Summary" paragraph.
 - Then, output the FULL aligned resume in plain text, organized into sections (e.g., SUMMARY, EXPERIENCE, SKILLS, EDUCATION).
+
 

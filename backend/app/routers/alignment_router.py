@@ -28,7 +28,9 @@ def run_alignment(
 
     hidden_summary, sections = align_resume(resume, job)
     docx_path = generate_aligned_resume_docx(
-        sections, filename=f"aligned_resume_{resume.id}_{job.id}.docx"
+        sections,
+        filename=f"aligned_resume_{resume.id}_{job.id}.docx",
+        template=payload.template or "classic",
     )
 
     aligned_text = "\n\n".join(
