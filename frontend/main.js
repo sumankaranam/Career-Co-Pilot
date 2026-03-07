@@ -62,20 +62,30 @@ function BaseResumeCard({ resume, onUploaded }) {
 }
 
 function JobUrlForm({ onAnalyzed }) {
+  const [mode, setMode] = useState("url"); // 'url' or 'text'
   const [url, setUrl] = useState("");
+  const [jdText, setJdText] = useState("");
+  const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!url) return;
+    if (mode === "url" && !url) return;
+    if (mode === "text" && !jdText.trim()) return;
     setLoading(true);
     setError("");
     try {
+      const payload =
+        mode === "url"
+          ? { url }
+          : {
+              jd_text: jdText,
+            };
       const res = await fetch(`${API_BASE}/api/job/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -90,6 +100,10 @@ function JobUrlForm({ onAnalyzed }) {
     }
   }
 
+  const canSubmit =
+    !loading &&
+    ((mode === "url" && !!url) || (mode === "text" && !!jdText.trim()));
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -97,27 +111,51 @@ function JobUrlForm({ onAnalyzed }) {
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1">
-          <h2 className="text-lg font-semibold">LinkedIn Job URL</h2>
+          <h2 className="text-lg font-semibold">Job Description</h2>
           <p className="text-sm text-slate-400">
-            Paste a job posting URL to analyze the role requirements.
+            Paste a LinkedIn job URL or expand to paste the description
+            directly.
           </p>
         </div>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="url"
-          placeholder="https://www.linkedin.com/jobs/view/..."
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          className="flex-1 rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
         <button
-          type="submit"
-          disabled={loading || !url}
-          className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-sm font-medium"
+          type="button"
+          onClick={() => {
+            setExpanded((v) => !v);
+            setMode((prev) => (prev === "url" ? "text" : "url"));
+          }}
+          className="text-xs text-indigo-400 hover:text-indigo-300 underline"
         >
-          {loading ? "Analyzing..." : "Analyze"}
+          {expanded ? "Use URL only" : "Paste description instead"}
         </button>
+      </div>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="url"
+            placeholder="https://www.linkedin.com/jobs/view/..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="flex-1 rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        {expanded && (
+          <textarea
+            placeholder="Paste the full job description here (optional alternative to URL)..."
+            value={jdText}
+            onChange={(e) => setJdText(e.target.value)}
+            rows={6}
+            className="rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+          />
+        )}
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-sm font-medium"
+          >
+            {loading ? "Analyzing..." : "Analyze"}
+          </button>
+        </div>
       </div>
       {error && <p className="text-xs text-red-400">{error}</p>}
     </form>

@@ -19,7 +19,10 @@ class ResumeOut(ResumeBase):
 
 
 class JobAnalyzeRequest(BaseModel):
-    url: HttpUrl
+    url: Optional[HttpUrl] = None
+    jd_text: Optional[str] = None
+    location: Optional[str] = None
+    company_name: Optional[str] = None
 
 
 class JobOut(BaseModel):
