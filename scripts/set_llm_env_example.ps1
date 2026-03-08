@@ -2,7 +2,7 @@
 # DO NOT commit a script that contains your real key.
 # Copy this file to `scripts\set_llm_env.local.ps1` and replace the placeholder value.
 
-$env:GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY_HERE"
+$env:GOOGLE_API_KEY = "your key here"
 
 Write-Host "GOOGLE_API_KEY set for this PowerShell session."
 

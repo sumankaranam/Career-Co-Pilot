@@ -1,8 +1,15 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import init_db
 from .routers import alignment_router, job_router, outreach_router, resume_router
+
+# Load environment variables from .env file
+env_path = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(env_path)
 
 
 def create_app() -> FastAPI:
