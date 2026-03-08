@@ -18,31 +18,56 @@ class LLMClient:
 
     def __init__(self) -> None:
         # Local LLM server endpoint
-        self.base_url = os.getenv("LOCAL_LLM_URL", "http://localhost:8000")
-        self.generate_endpoint = f"{self.base_url}/generate"
+        self.base_url = os.getenv("LOCAL_LLM_URL", "http://localhost:11434")
+        
+        # Detect endpoint type based on base URL
+        if "11434" in self.base_url or "ollama" in self.base_url.lower():
+            # Ollama uses /api/generate endpoint
+            self.endpoint = f"{self.base_url}/api/generate"
+            self.is_ollama = True
+        else:
+            # Custom servers use /generate endpoint
+            self.endpoint = f"{self.base_url}/generate"
+            self.is_ollama = False
+        
+        self.model = os.getenv("LLM_MODEL", "llama3.1")  # Default model for Ollama
         
         print(f"[LLMClient] Initializing with local LLM at: {self.base_url}")
+        print(f"[LLMClient] Using endpoint: {self.endpoint}")
+        if self.is_ollama:
+            print(f"[LLMClient] Detected Ollama - using model: {self.model}")
         
         # Test connection to local LLM
         try:
-            response = requests.post(
-                self.generate_endpoint,
-                json={
+            if self.is_ollama:
+                test_payload = {
+                    "model": self.model,
+                    "prompt": "test",
+                    "stream": False
+                }
+            else:
+                test_payload = {
                     "prompt": "test",
                     "max_tokens": 1,
                     "temperature": 0.7,
-                },
-                timeout=5
+                }
+            
+            response = requests.post(
+                self.endpoint,
+                json=test_payload,
+                timeout=10
             )
             if response.status_code == 200:
-                print(f"[LLMClient] Successfully connected to local LLM server")
+                print(f"[LLMClient] ✅ Successfully connected to local LLM server")
                 self._model = True  # Mark as configured
             else:
                 print(f"[LLMClient] ERROR: Local LLM server returned status {response.status_code}")
+                print(f"[LLMClient] Response: {response.text[:200]}")
                 self._model = None
         except requests.exceptions.ConnectionError as e:
-            print(f"[LLMClient] ERROR: Cannot connect to local LLM at {self.base_url}")
+            print(f"[LLMClient] ERROR: Cannot connect to local LLM at {self.endpoint}")
             print(f"[LLMClient] Make sure your local LLM server is running")
+            print(f"[LLMClient] For Ollama, run: ollama serve")
             print(f"[LLMClient] Error: {e}")
             self._model = None
         except Exception as e:
@@ -67,40 +92,63 @@ SKILLS:
 [Skills would be matched to job requirements]
 
 Note: Local LLM server is not available. Please ensure:
-1. Your local LLM (Llama3.1) is running on {self.base_url}
-2. The /generate endpoint is accessible
+1. Your local LLM (Llama3.1) is running at: {self.base_url}
+2. Check the endpoint: {self.endpoint}
 3. GPU is properly configured
 
-To start a local LLM, you can use:
-- Ollama: ollama run llama2 (then pull llama3.1)
-- LocalAI: localai start
+To start a local LLM, use:
+- Ollama (Recommended): ollama serve (then in another terminal: ollama pull llama3.1)
 - vLLM: python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-2-7b-hf
+- LocalAI: docker-compose up
+
+Check backend logs for more details on connection error.
 """
         
         try:
             print(f"[LLMClient] Sending prompt to local LLM (max_tokens={max_tokens})...")
             
-            payload = {
-                "prompt": prompt,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "top_p": 0.95,
-                "top_k": 40
-            }
+            if self.is_ollama:
+                # Ollama API format
+                payload = {
+                    "model": self.model,
+                    "prompt": prompt,
+                    "temperature": temperature,
+                    "top_p": 0.95,
+                    "top_k": 40,
+                    "stream": False,
+                    "num_predict": max_tokens
+                }
+            else:
+                # Custom server API format
+                payload = {
+                    "prompt": prompt,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "top_p": 0.95,
+                    "top_k": 40
+                }
             
             response = requests.post(
-                self.generate_endpoint,
+                self.endpoint,
                 json=payload,
                 timeout=300  # 5 minutes timeout for long generations
             )
             
             if response.status_code == 200:
                 result = response.json()
-                generated_text = result.get("generated_text", "")
+                
+                # Extract response based on endpoint type
+                if self.is_ollama:
+                    generated_text = result.get("response", "")
+                else:
+                    generated_text = result.get("generated_text", "")
+                
                 tokens = result.get("tokens_generated", 0)
                 time_ms = result.get("inference_time_ms", 0)
                 
-                print(f"[LLMClient] Successfully generated {tokens} tokens in {time_ms}ms")
+                print(f"[LLMClient] ✅ Successfully generated text")
+                if tokens:
+                    print(f"[LLMClient] Tokens: {tokens}, Time: {time_ms}ms")
                 return generated_text
             else:
                 error_msg = f"Local LLM returned status {response.status_code}"
@@ -112,10 +160,13 @@ To start a local LLM, you can use:
             print(f"[LLMClient] ERROR: Request timed out after 5 minutes")
             return "[ERROR] Request timed out - LLM response took too long"
         except requests.exceptions.ConnectionError as e:
-            print(f"[LLMClient] ERROR: Connection failed to {self.generate_endpoint}")
+            print(f"[LLMClient] ERROR: Connection failed to {self.endpoint}")
+            print(f"[LLMClient] Make sure LLM is running: ollama serve")
             return f"[ERROR] Cannot connect to local LLM: {str(e)[:100]}"
         except Exception as e:
             print(f"[LLMClient] ERROR: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             return f"[ERROR] Failed to generate text: {str(e)[:100]}"
 
 
