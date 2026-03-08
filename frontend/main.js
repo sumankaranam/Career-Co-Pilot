@@ -1,6 +1,6 @@
 const { useState } = React;
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "http://localhost:8001";
 
 function BaseResumeCard({ resume, onUploaded }) {
   const [uploading, setUploading] = useState(false);
@@ -52,11 +52,65 @@ function BaseResumeCard({ resume, onUploaded }) {
         </label>
       </div>
       {resume && (
-        <p className="text-xs text-slate-400">
-          Latest: <span className="font-mono">{resume.file_path}</span>
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-slate-400">
+            Latest: <span className="font-mono">{resume.file_path}</span>
+          </p>
+          <ResumePreview resumeId={resume.id} />
+        </div>
       )}
       {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+function ResumePreview({ resumeId }) {
+  const [content, setContent] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  async function loadContent() {
+    if (content || !resumeId) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/resume/${resumeId}`, {
+        method: "GET",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to load resume content");
+      }
+      const data = await res.json();
+      setContent(data.text_content || "No content available");
+      setExpanded(true);
+    } catch (err) {
+      setContent("Error loading content: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-slate-950 border border-slate-700 rounded-lg p-3">
+      <button
+        onClick={() => {
+          if (!content) loadContent();
+          setExpanded(!expanded);
+        }}
+        className="text-xs text-indigo-400 hover:text-indigo-300 font-medium mb-2 flex items-center gap-1"
+      >
+        <span>{expanded ? "▼" : "▶"}</span>
+        <span>{loading ? "Loading preview..." : "View Document Content"}</span>
+      </button>
+      {expanded && content && (
+        <div className="text-xs text-slate-300 bg-slate-900 rounded p-3 max-h-60 overflow-y-auto whitespace-pre-wrap font-mono border border-slate-800">
+          {content.substring(0, 1000)}
+          {content.length > 1000 && (
+            <span className="text-slate-500">
+              ... ({content.length - 1000} more characters)
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

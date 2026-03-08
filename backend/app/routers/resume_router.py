@@ -54,3 +54,15 @@ def get_latest_base_resume(db: Session = Depends(get_db)) -> schemas.ResumeOut:
         )
     return resume
 
+
+@router.get("/{resume_id}", response_model=schemas.ResumeOut)
+def get_resume_by_id(resume_id: int, db: Session = Depends(get_db)) -> schemas.ResumeOut:
+    """Fetch a resume by ID to view its content."""
+    resume = db.query(models.Resume).filter(models.Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Resume with ID {resume_id} not found.",
+        )
+    return resume
+
