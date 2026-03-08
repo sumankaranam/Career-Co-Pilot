@@ -11,11 +11,12 @@ class ResumeBase(BaseModel):
 class ResumeOut(ResumeBase):
     id: int
     file_path: str
+    text_content: str
     created_at: datetime
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class JobAnalyzeRequest(BaseModel):
@@ -37,7 +38,7 @@ class JobOut(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class AlignmentRunRequest(BaseModel):
