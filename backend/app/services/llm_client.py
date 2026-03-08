@@ -1,92 +1,122 @@
 import os
 from typing import Dict
 
+import requests
 from dotenv import load_dotenv
-import google.generativeai as genai
 
-# Load .env file early to ensure GOOGLE_API_KEY is available
+# Load .env file early to ensure configuration is available
 load_dotenv()
 
 
 class LLMClient:
     """
-    Thin wrapper around Google Gemini.
-
-    For local development without a key, you can stub calls by
-    setting GOOGLE_API_KEY to an empty string and catching errors
-    at call sites.
+    Wrapper for local Llama3.1 LLM inference API.
+    
+    Expects a local LLM server running at http://localhost:8000
+    (e.g., Ollama, LocalAI, or custom inference server)
     """
 
     def __init__(self) -> None:
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            print("[LLMClient] WARNING: GOOGLE_API_KEY not found in environment")
-            self._model = None
-            return
-        print(f"[LLMClient] Initializing with API key (first 10 chars): {api_key[:10]}...")
-        genai.configure(api_key=api_key)
+        # Local LLM server endpoint
+        self.base_url = os.getenv("LOCAL_LLM_URL", "http://localhost:8000")
+        self.generate_endpoint = f"{self.base_url}/generate"
         
-        # Use gemini-pro as it's the most stable and widely available model
-        # If that doesn't work, we'll handle the error in generate_text()
-        self._model = genai.GenerativeModel("gemini-pro")
-        print("[LLMClient] Successfully initialized Gemini model: gemini-pro")
+        print(f"[LLMClient] Initializing with local LLM at: {self.base_url}")
+        
+        # Test connection to local LLM
+        try:
+            response = requests.post(
+                self.generate_endpoint,
+                json={
+                    "prompt": "test",
+                    "max_tokens": 1,
+                    "temperature": 0.7,
+                },
+                timeout=5
+            )
+            if response.status_code == 200:
+                print(f"[LLMClient] Successfully connected to local LLM server")
+                self._model = True  # Mark as configured
+            else:
+                print(f"[LLMClient] ERROR: Local LLM server returned status {response.status_code}")
+                self._model = None
+        except requests.exceptions.ConnectionError as e:
+            print(f"[LLMClient] ERROR: Cannot connect to local LLM at {self.base_url}")
+            print(f"[LLMClient] Make sure your local LLM server is running")
+            print(f"[LLMClient] Error: {e}")
+            self._model = None
+        except Exception as e:
+            print(f"[LLMClient] ERROR: {type(e).__name__}: {e}")
+            self._model = None
 
     def is_configured(self) -> bool:
         return self._model is not None
 
-    def generate_text(self, prompt: str, temperature: float = 0.4) -> str:
+    def generate_text(self, prompt: str, temperature: float = 0.4, max_tokens: int = 2000) -> str:
         if not self._model:
-            # Fallback stub for local dev without API key
-            return f"[LLM stubbed output]\n\nPrompt was:\n{prompt[:1000]}"
-        
-        # Try with current model, fall back to alternatives if it fails
-        models_to_try = [
-            self._model,
-            genai.GenerativeModel("gemini-pro"),
-            genai.GenerativeModel("gemini-1.5-flash"),
-            genai.GenerativeModel("gemini-1.5-pro"),
-        ]
-        
-        last_error = None
-        for model in models_to_try:
-            try:
-                print(f"[LLMClient] Attempting to generate with model...")
-                response = model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        temperature=temperature,
-                    ),
-                )
-                print(f"[LLMClient] Successfully generated content")
-                return response.text or ""
-            except Exception as e:
-                last_error = e
-                print(f"[LLMClient] Error with model: {type(e).__name__}: {str(e)[:100]}")
-                continue
-        
-        # If all models fail, return a helpful stub that shows what was sent
-        print(f"[LLMClient] WARNING: All models failed, returning stub response")
-        print(f"[LLMClient] Last error: {last_error}")
-        
-        # Generate a simple stub response based on the prompt for testing
-        return f"""ALIGNED RESUME
+            # Fallback stub for when local LLM is not available
+            return f"""ALIGNED RESUME
 
 SUMMARY:
-Based on the job description provided, here are key alignments:
+Based on the job description provided, this is a placeholder for the aligned resume.
 
 EXPERIENCE:
-[Aligned resume content would be generated here by the LLM if API key had proper access]
+[Resume content would be aligned here by the LLM]
 
 SKILLS:
-[Skills would be aligned to job requirements]
+[Skills would be matched to job requirements]
 
-Note: The LLM API key appears to be restricted. Please verify:
-1. Your Google API key has proper permissions
-2. Gemini models are enabled in your Google Cloud project
-3. Your account has access to Generative AI models
+Note: Local LLM server is not available. Please ensure:
+1. Your local LLM (Llama3.1) is running on {self.base_url}
+2. The /generate endpoint is accessible
+3. GPU is properly configured
 
-Error: {str(last_error)[:200]}
+To start a local LLM, you can use:
+- Ollama: ollama run llama2 (then pull llama3.1)
+- LocalAI: localai start
+- vLLM: python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-2-7b-hf
 """
+        
+        try:
+            print(f"[LLMClient] Sending prompt to local LLM (max_tokens={max_tokens})...")
+            
+            payload = {
+                "prompt": prompt,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "top_p": 0.95,
+                "top_k": 40
+            }
+            
+            response = requests.post(
+                self.generate_endpoint,
+                json=payload,
+                timeout=300  # 5 minutes timeout for long generations
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                generated_text = result.get("generated_text", "")
+                tokens = result.get("tokens_generated", 0)
+                time_ms = result.get("inference_time_ms", 0)
+                
+                print(f"[LLMClient] Successfully generated {tokens} tokens in {time_ms}ms")
+                return generated_text
+            else:
+                error_msg = f"Local LLM returned status {response.status_code}"
+                print(f"[LLMClient] ERROR: {error_msg}")
+                print(f"[LLMClient] Response: {response.text[:200]}")
+                return f"[ERROR] {error_msg}"
+                
+        except requests.exceptions.Timeout:
+            print(f"[LLMClient] ERROR: Request timed out after 5 minutes")
+            return "[ERROR] Request timed out - LLM response took too long"
+        except requests.exceptions.ConnectionError as e:
+            print(f"[LLMClient] ERROR: Connection failed to {self.generate_endpoint}")
+            return f"[ERROR] Cannot connect to local LLM: {str(e)[:100]}"
+        except Exception as e:
+            print(f"[LLMClient] ERROR: {type(e).__name__}: {e}")
+            return f"[ERROR] Failed to generate text: {str(e)[:100]}"
 
 
 llm_client_singleton: LLMClient | None = None
